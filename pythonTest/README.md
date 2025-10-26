@@ -150,6 +150,31 @@ deactivate
 2. **Invalid JSON**: Ensure the file was exported properly from the web app
 3. **Dimension mismatch**: Verify you're using 52-dimensional feature vectors
 4. **Import errors**: Install required packages with `pip install -r requirements.txt`
+5. **MediaPipe installation fails**: MediaPipe requires Python 3.8-3.11
+
+### MediaPipe Compatibility
+
+MediaPipe has specific Python version requirements:
+- ✅ **Python 3.8, 3.9, 3.10, 3.11** - Compatible
+- ❌ **Python 3.12, 3.13+** - Not compatible
+
+If you have Python 3.12+ and want MediaPipe support:
+
+```bash
+# Option 1: Use pyenv to install Python 3.11
+pyenv install 3.11.0
+pyenv local 3.11.0
+python -m venv emotion_env
+source emotion_env/bin/activate
+pip install -r requirements-mediapipe.txt
+
+# Option 2: Use conda
+conda create -n emotion_env python=3.11
+conda activate emotion_env
+pip install -r requirements-mediapipe.txt
+```
+
+**Note**: Core functionality (numpy, scikit-learn) works with any Python 3.7+ version.
 
 ## 🔧 Usage Examples
 

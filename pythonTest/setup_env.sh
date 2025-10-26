@@ -46,9 +46,23 @@ pip install -r requirements.txt
 if [ $? -eq 0 ]; then
     echo "✅ All packages installed successfully!"
 else
-    echo "❌ Some packages failed to install"
-    echo "💡 Try installing core packages manually:"
-    echo "   pip install numpy scikit-learn"
+    echo "⚠️  Some optional packages failed to install (this is normal)"
+    echo "💡 Core packages (numpy, scikit-learn) should be installed"
+    echo "💡 For MediaPipe support, check Python version compatibility"
+    echo "💡 MediaPipe requires Python 3.8-3.11"
+fi
+
+# Check Python version for MediaPipe compatibility
+python_version=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+echo "🐍 Python version: $python_version"
+
+if [[ "$python_version" == "3.8" || "$python_version" == "3.9" || "$python_version" == "3.10" || "$python_version" == "3.11" ]]; then
+    echo "✅ Python version compatible with MediaPipe"
+    echo "💡 You can install MediaPipe with: pip install mediapipe"
+else
+    echo "⚠️  Python version $python_version not compatible with MediaPipe"
+    echo "💡 MediaPipe requires Python 3.8-3.11"
+    echo "💡 Core functionality (numpy, scikit-learn) will work fine"
 fi
 
 echo ""

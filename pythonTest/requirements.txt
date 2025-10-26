@@ -1,9 +1,13 @@
-# Core ML Libraries
+# Core ML Libraries (Required)
 numpy>=1.21.0
 scikit-learn>=1.0.0
 
 # Optional: For advanced usage with MediaPipe
-mediapipe>=0.10.0
+# Note: MediaPipe requires Python 3.8-3.11
+# Uncomment the line below if you have compatible Python version
+# mediapipe>=0.10.0
+
+# Optional: For computer vision
 opencv-python>=4.5.0
 
 # Optional: For data visualization and analysis
