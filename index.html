@@ -226,7 +226,7 @@
     /* Two Column Layout */
     .two-column-layout {
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 2rem;
       margin-bottom: 2rem;
     }
@@ -234,6 +234,27 @@
     .column {
       display: flex;
       flex-direction: column;
+    }
+    
+    /* Emotion Column - Left side */
+    .emotion-column {
+      justify-content: center;
+      align-items: center;
+    }
+    
+    /* Video Column - Right side */
+    .video-column {
+      justify-content: flex-start;
+    }
+    
+    /* Emotion Display Card */
+    #emoji-display-card {
+      min-height: 400px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
     }
     
     .results-section {
@@ -245,6 +266,22 @@
       grid-template-columns: 1fr;
       gap: 2rem;
       margin-top: 1.5rem;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .two-column-layout {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      
+      #emoji-display-card {
+        min-height: 300px;
+      }
+      
+      #big-emoji-output {
+        font-size: 6rem !important;
+      }
     }
     
     .result-card {
@@ -418,29 +455,36 @@
     </div>
 
     <section id="demos" class="invisible">
-      <!-- Current Emotion Display -->
-      <div class="card" id="emoji-display-card">
-        <h2><span class="emoji">🎭</span> Current Emotion</h2>
-        <div id="big-emoji-output" style="font-size: 8rem; text-align: center; margin-top: 10px;">
-          <span class="emoji">😐</span>
+      <!-- Side-by-side Layout: Current Emotion and Live Webcam -->
+      <div class="two-column-layout">
+        <!-- Left Column - Current Emotion Display -->
+        <div class="column emotion-column">
+          <div class="card" id="emoji-display-card">
+            <h2><span class="emoji">🎭</span> Current Emotion</h2>
+            <div id="big-emoji-output" style="font-size: 8rem; text-align: center; margin-top: 10px;">
+              <span class="emoji">😐</span>
+            </div>
+            <p id="emotion-label" style="text-align: center; font-size: 1.5rem; font-weight: bold; color: #764ba2;">Neutral</p>
+          </div>
         </div>
-        <p id="emotion-label" style="text-align: center; font-size: 1.5rem; font-weight: bold; color: #764ba2;">Neutral</p>
-      </div>
 
-      <!-- Live Video Detection -->
-      <div class="card">
-        <h2><span class="emoji">📹</span> Live Webcam Detection</h2>
-        <p>Hold your face in front of your webcam for real-time analysis.</p>
+        <!-- Right Column - Live Video Detection -->
+        <div class="column video-column">
+          <div class="card">
+            <h2><span class="emoji">📹</span> Live Webcam Detection</h2>
+            <p>Hold your face in front of your webcam for real-time analysis.</p>
 
-        <div id="liveView" class="videoView">
-          <button id="webcamButton" class="mdc-button mdc-button--raised">
-            <span class="mdc-button__ripple"></span>
-            <span class="mdc-button__label">🚀 ENABLE WEBCAM</span>
-          </button>
-          
-          <div class="video-container">
-            <video id="webcam" autoplay playsinline muted></video>
-            <canvas class="output_canvas" id="output_canvas"></canvas>
+            <div id="liveView" class="videoView">
+              <button id="webcamButton" class="mdc-button mdc-button--raised">
+                <span class="mdc-button__ripple"></span>
+                <span class="mdc-button__label">🚀 ENABLE WEBCAM</span>
+              </button>
+              
+              <div class="video-container">
+                <video id="webcam" autoplay playsinline muted></video>
+                <canvas class="output_canvas" id="output_canvas"></canvas>
+              </div>
+            </div>
           </div>
         </div>
       </div>
