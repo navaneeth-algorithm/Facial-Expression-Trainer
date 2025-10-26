@@ -22,11 +22,33 @@ const videoBlendShapes = document.getElementById("video-blend-shapes");
 const bigEmojiOutput = document.getElementById("big-emoji-output");
 const emotionLabel = document.getElementById("emotion-label");
 
+// NEW: Globals for Custom Classifier
+const classifier = knnClassifier.create();
+let isTraining = false;
+let currentEmotionClass = null;
+let sampleCount = {}; // e.g., { 'Grinning': 0, 'Tired': 0 }
+
+// NEW: UI Elements for Training
+const trainingStatusEl = document.getElementById("training-status");
+const trainButton = document.getElementById("train-button");
+const emotionButtons = document.querySelectorAll("#custom-emotions-container button");
+
 let faceLandmarker;
 let runningMode = "IMAGE";
 let enableWebcamButton;
 let webcamRunning = false;
 const videoWidth = 480;
+
+// Function to update the training status UI
+function updateTrainingStatus() {
+  const totalSamples = Object.values(sampleCount).reduce((sum, count) => sum + count, 0);
+  const statusText = isTraining ? `Collecting: ${currentEmotionClass} (${sampleCount[currentEmotionClass] || 0})` : 'Ready to collect';
+  trainingStatusEl.innerHTML = `<p>Status: <strong>${statusText}</strong> | Total Samples: <strong>${totalSamples}</strong></p>`;
+
+  if (totalSamples > 0) {
+    trainButton.disabled = false;
+  }
+}
 
 // Before we can use FaceLandmarker class we must wait for it to finish
 // loading. Machine Learning models can be large and take a moment to
@@ -74,6 +96,52 @@ async function createFaceLandmarker() {
   }
 }
 createFaceLandmarker();
+
+// Function to handle class button clicks
+function handleClassButtonClick(event) {
+  const emotion = event.currentTarget.dataset.emotion;
+
+  // Start training/collection mode for the selected emotion
+  if (isTraining && currentEmotionClass === emotion) {
+    // Stop collecting if the same button is pressed again
+    isTraining = false;
+    currentEmotionClass = null;
+    event.currentTarget.classList.remove('mdc-button--collecting');
+  } else {
+    // Start collecting for a new emotion
+    isTraining = true;
+    currentEmotionClass = emotion;
+
+    // Reset all buttons' state and set the new one
+    emotionButtons.forEach(btn => btn.classList.remove('mdc-button--collecting'));
+    event.currentTarget.classList.add('mdc-button--collecting');
+  }
+  updateTrainingStatus();
+}
+
+// Function to handle the Train button click
+function handleTrainButtonClick() {
+  if (classifier.getNumClasses() > 0) {
+    isTraining = false;
+    currentEmotionClass = null;
+    emotionButtons.forEach(btn => btn.disabled = true);
+    trainButton.disabled = true;
+    trainButton.textContent = '✅ Prediction Mode Active';
+    
+    updateTrainingStatus();
+  }
+}
+
+// Attach listeners once the document is ready
+window.addEventListener('DOMContentLoaded', () => {
+  emotionButtons.forEach(button => {
+    // Initialize sample counts
+    sampleCount[button.dataset.emotion] = 0;
+    button.addEventListener('click', handleClassButtonClick);
+  });
+
+  trainButton.addEventListener('click', handleTrainButtonClick);
+});
 
 /********************************************************************
 // Demo 1: Grab a bunch of images from the page and detection them
@@ -348,24 +416,70 @@ async function predictWebcam() {
     
     drawBlendShapes(videoBlendShapes, results?.faceBlendshapes);
 
-    // --- NEW EMOJI LOGIC ---
+    // --- ML TRAINING AND PREDICTION LOGIC ---
     if (results?.faceBlendshapes && results.faceBlendshapes.length > 0) {
-      const emotion = classifyEmotion(results.faceBlendshapes);
+      // 1. Get the 52-dimensional feature vector (the blend shape scores)
+      const features = getBlendShapeFeatures(results.faceBlendshapes);
 
-      // Update the big emoji display
-      bigEmojiOutput.innerHTML = `<span class="emoji">${emotion.emoji}</span>`;
-      
-      // Update the emotion text label
-      emotionLabel.textContent = emotion.name;
-      
-      // Debug logging
-      console.log(`🎭 Emotion detected: ${emotion.name} (${emotion.emoji}) - Score: ${emotion.score.toFixed(3)}`);
+      if (features) {
+        // --- DATA COLLECTION MODE ---
+        if (isTraining && currentEmotionClass) {
+          // Add the current 52 scores (features) with the current label (currentEmotionClass)
+          classifier.addExample(features, currentEmotionClass);
+          sampleCount[currentEmotionClass] = (sampleCount[currentEmotionClass] || 0) + 1;
+          updateTrainingStatus();
+          
+          // Show collecting feedback
+          bigEmojiOutput.innerHTML = `<span class="emoji">📊</span>`;
+          emotionLabel.textContent = `Collecting ${currentEmotionClass}...`;
+        }
+        
+        // --- PREDICTION MODE ---
+        else if (!isTraining && classifier.getNumClasses() > 0) {
+          // Only try to predict if the model has been trained (has examples)
+          const kValue = 10; // K-Nearest Neighbors parameter
+          classifier.predictClass(features, kValue).then(({ label, confidences }) => {
+            // Find the confidence score for the predicted label
+            const score = confidences[label] || 0;
+            
+            // Get the emoji (you'll need to define a map for this)
+            const emojiMap = {
+              'Grinning': '😬',
+              'Tired': '😫',
+              'Pouting': '😒',
+              // Add more here
+            };
+
+            // The new primary emotion result
+            const mlPrediction = { 
+              name: label, 
+              emoji: emojiMap[label] || '❓', 
+              score: score * 100 // Convert to percentage
+            };
+
+            // Update UI elements with the ML prediction result
+            bigEmojiOutput.innerHTML = `<span class="emoji">${mlPrediction.emoji}</span>`;
+            emotionLabel.textContent = `${mlPrediction.name} (${mlPrediction.score.toFixed(1)}%)`;
+            
+            console.log(`🤖 ML Prediction: ${mlPrediction.name} (${mlPrediction.score.toFixed(1)}%)`);
+          });
+        }
+        
+        // --- DEFAULT STATE ---
+        else {
+          bigEmojiOutput.innerHTML = `<span class="emoji">😐</span>`;
+          emotionLabel.textContent = "Neutral";
+        }
+        
+        // To avoid memory leaks, explicitly dispose of the tensor
+        features.dispose();
+      }
     } else if (webcamRunning === true) {
       // If no face is detected, display a prompt
       bigEmojiOutput.innerHTML = `<span class="emoji">👤</span>`;
       emotionLabel.textContent = "No Face Detected";
     }
-    // --- END NEW EMOJI LOGIC ---
+    // --- END ML LOGIC ---
 
     // Call this function again to keep predicting when the browser is ready.
     if (webcamRunning === true) {
@@ -377,83 +491,26 @@ async function predictWebcam() {
 }
 
 /**
- * Classifies the 52 blend shape scores into a single major emotion.
- * @param {Array} blendShapes - The array of blend shape categories from MediaPipe.
- * @returns {object} An object containing the primary emotion name and its emoji.
+ * Extracts the 52 blend shape scores from MediaPipe results into a tf.Tensor1D.
+ * @param {object} faceBlendshapes - The raw MediaPipe blend shape results.
+ * @returns {tf.Tensor1D | null} A 1D tensor of 52 floating-point blend shape scores.
  */
-function classifyEmotion(blendShapes) {
-  if (!blendShapes || blendShapes.length === 0) {
-    return { name: "Detecting...", emoji: "🤔" };
+function getBlendShapeFeatures(faceBlendshapes) {
+  if (!faceBlendshapes || !faceBlendshapes.length) {
+    return null;
   }
 
-  // Convert blendShapes array to a more easily accessible key-value map
-  const scores = blendShapes[0].categories.reduce((acc, category) => {
-    acc[category.categoryName] = category.score;
-    return acc;
-  }, {});
+  const scores = faceBlendshapes[0].categories;
+  const featuresArray = scores.map(shape => shape.score);
 
-  // Start with Neutral and a minimal score
-  let primaryEmotion = { name: "Neutral", emoji: "😐", score: 0.2 };
-
-  // --- Core Emotion Thresholds ---
-  const strong_threshold = 0.55; 
-  const medium_threshold = 0.35;
-
-  // 1. HAPPY (Smile is dominant)
-  // Happy is a combination of Mouth_Smile and Cheek_Squint.
-  const happyScore = (scores.mouthSmileLeft || 0) * 0.5 + (scores.mouthSmileRight || 0) * 0.5 + (scores.cheekSquintLeft || 0) * 0.1 + (scores.cheekSquintRight || 0) * 0.1;
-  if (happyScore > strong_threshold) {
-    primaryEmotion = { name: "Happy", emoji: "😊", score: happyScore };
+  // Ensure we have exactly 52 features
+  if (featuresArray.length !== 52) {
+    console.error("Expected 52 blend shapes, found:", featuresArray.length);
+    return null;
   }
 
-  // 2. SURPRISE (Wide Eyes AND Open Mouth)
-  // Requires both a strong mouth opening AND noticeable eye widening.
-  const surpriseScore = (scores.mouthOpen || 0) * 0.5 + (scores.eyeWideLeft || 0) * 0.25 + (scores.eyeWideRight || 0) * 0.25;
-  
-  // Check for Surprise: High total score AND at least one eye wide.
-  if (surpriseScore > strong_threshold && (scores.eyeWideLeft > medium_threshold || scores.eyeWideRight > medium_threshold)) {
-    primaryEmotion = { name: "Surprised", emoji: "😮", score: surpriseScore };
-  }
-  
-  // If a strong emotion is already classified, we can skip Sad/Angry checks to simplify.
-  if (primaryEmotion.name === "Happy" || primaryEmotion.name === "Surprised") return primaryEmotion;
-
-
-  // 3. SADNESS vs. ANGER
-  
-  // SADNESS: Strong Brow_Inner_Up is the primary feature, combined with a frown.
-  // We prioritize BrowInnerUp over BrowDown for Sadness.
-  const sadScore = (scores.browInnerUp || 0) * 0.6 + ((scores.mouthFrownLeft || 0) + (scores.mouthFrownRight || 0)) * 0.4;
-  
-  // ANGER: Strong Brow_Down is the key feature.
-  const angryScore = ((scores.browDownLeft || 0) + (scores.browDownRight || 0)) * 0.5;
-
-  if (sadScore > angryScore && sadScore > medium_threshold) {
-    // Select Sad if Sad score is dominant and above medium threshold
-    primaryEmotion = { name: "Sad", emoji: "😞", score: sadScore };
-  } else if (angryScore > medium_threshold && angryScore > primaryEmotion.score) {
-    // Select Angry if Angry score is high (and higher than the starting Neutral score)
-    primaryEmotion = { name: "Angry", emoji: "😠", score: angryScore };
-  }
-  
-
-  // 4. TALKING / YAWN (Mouth open with no strong emotion)
-  // If the mouth is open but no strong emotion (like Happy, Sad, Angry, Surprise) was classified,
-  // we default to Talking/Yawn. Lowering the threshold to 0.4 makes it more sensitive.
-  const mouthOpenScore = (scores.mouthOpen || 0);
-  if (mouthOpenScore > 0.4 && primaryEmotion.name === "Neutral") {
-    primaryEmotion = { name: "Talking/Yawn", emoji: "🗣️", score: mouthOpenScore };
-  }
-  
-  // 5. WINK (A specific action)
-  // Check for a strong unilateral blink.
-  if ((scores.eyeBlinkLeft || 0) > 0.8 && (scores.eyeBlinkRight || 0) < 0.2) {
-    primaryEmotion = { name: "Wink", emoji: "😉", score: scores.eyeBlinkLeft };
-  } else if ((scores.eyeBlinkRight || 0) > 0.8 && (scores.eyeBlinkLeft || 0) < 0.2) {
-    primaryEmotion = { name: "Wink", emoji: "😉", score: scores.eyeBlinkRight };
-  }
-
-  return primaryEmotion;
+  // Convert the array of 52 scores into a 1D TensorFlow Tensor
+  return tf.tensor1d(featuresArray);
 }
 
 function drawBlendShapes(el, blendShapes) {

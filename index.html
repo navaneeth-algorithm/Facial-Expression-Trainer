@@ -10,6 +10,10 @@
   <link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
   <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
   
+  <!-- TensorFlow.js and KNN Classifier -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier@1.2.5/dist/knn-classifier.min.js"></script>
+  
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
@@ -260,6 +264,56 @@
       gap: 0.5rem;
     }
     
+    /* Training Controls Styling */
+    .training-controls {
+      margin-bottom: 2rem;
+    }
+    
+    #custom-emotions-container {
+      display: flex;
+      gap: 1rem;
+      margin: 1.5rem 0;
+      flex-wrap: wrap;
+    }
+    
+    .mdc-button--class {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: white;
+      border-radius: 25px;
+      min-width: 150px;
+    }
+    
+    .mdc-button--class.mdc-button--collecting {
+      background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+      animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    #train-button {
+      background: linear-gradient(45deg, #4ecdc4, #44a08d);
+      color: white;
+      border-radius: 25px;
+      margin-top: 1rem;
+    }
+    
+    #train-button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    #training-status {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      text-align: center;
+    }
+    
     /* Override Material Design button styles */
     .mdc-button {
       background: linear-gradient(45deg, #667eea, #764ba2) !important;
@@ -340,6 +394,32 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Custom Model Trainer Section -->
+      <div class="card training-controls">
+        <h2><span class="emoji">🧠</span> Custom Model Trainer</h2>
+        <p>Collect data points for each custom expression and then train the model.</p>
+
+        <div id="custom-emotions-container">
+          <button id="class-grinning" class="mdc-button mdc-button--raised mdc-button--class" data-emotion="Grinning">
+            <span class="mdc-button__label">Collect Grinning 😬</span>
+          </button>
+          <button id="class-tired" class="mdc-button mdc-button--raised mdc-button--class" data-emotion="Tired">
+            <span class="mdc-button__label">Collect Tired 😫</span>
+          </button>
+          <button id="class-pouting" class="mdc-button mdc-button--raised mdc-button--class" data-emotion="Pouting">
+            <span class="mdc-button__label">Collect Pouting 😒</span>
+          </button>
+        </div>
+
+        <button id="train-button" class="mdc-button mdc-button--raised" disabled>
+          <span class="mdc-button__label">✨ Train & Start Prediction Mode</span>
+        </button>
+
+        <div id="training-status">
+          <p>Status: <strong>Ready to collect</strong> | Samples: <strong>0</strong></p>
         </div>
       </div>
 
