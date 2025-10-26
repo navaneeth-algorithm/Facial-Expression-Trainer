@@ -228,7 +228,7 @@ def real_time_emotion_detection(classifier, metadata, classes):
                 
                 # Extract blend shapes (simplified - you'll need to implement this properly)
                 # For now, we'll use a placeholder
-                blend_shapes = extract_blend_shapes_mediapipe(results)
+                blend_shapes = extract_blend_shapes_mediapipe(results, frame_count)
         else:
             # Use OpenCV for basic face detection
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -239,7 +239,7 @@ def real_time_emotion_detection(classifier, metadata, classes):
             
             if len(faces) > 0:
                 # Generate mock blend shapes for demonstration
-                blend_shapes = generate_mock_blend_shapes()
+                blend_shapes = generate_mock_blend_shapes(frame_count)
         
         # Predict emotion if blend shapes are available
         if blend_shapes is not None:
@@ -251,6 +251,12 @@ def real_time_emotion_detection(classifier, metadata, classes):
                 last_prediction = prediction
                 last_confidence = confidence
                 last_all_confidences = confidences
+                
+                # Debug output every 30 frames to show changing percentages
+                if frame_count % 30 == 0:
+                    print(f"🎯 Frame {frame_count}: {prediction} ({confidence:.1%})")
+                    for emotion, conf in sorted(confidences.items(), key=lambda x: x[1], reverse=True)[:3]:
+                        print(f"   {emotion}: {conf:.1%}")
                 
             except Exception as e:
                 print(f"⚠️  Prediction error: {e}")
@@ -283,23 +289,37 @@ def real_time_emotion_detection(classifier, metadata, classes):
     cv2.destroyAllWindows()
     print("🎬 Real-time detection ended")
 
-def extract_blend_shapes_mediapipe(results):
+def extract_blend_shapes_mediapipe(results, frame_count=None):
     """
     Extract blend shapes from MediaPipe results.
     This is a simplified implementation - you'll need to implement proper blend shape extraction.
     """
     # For now, return mock blend shapes
     # In a real implementation, you would extract the actual 52 blend shape scores
-    return generate_mock_blend_shapes()
+    return generate_mock_blend_shapes(frame_count)
 
-def generate_mock_blend_shapes():
+def generate_mock_blend_shapes(frame_count=None):
     """
     Generate mock blend shapes for demonstration purposes.
     In real usage, these would come from MediaPipe Face Mesh.
     """
-    # Generate random blend shapes that sum to reasonable values
-    np.random.seed(42)  # For consistent demo
+    # Generate dynamic blend shapes that change over time
+    if frame_count is not None:
+        # Use frame count to create time-based variation
+        np.random.seed(42 + (frame_count // 10))  # Change every 10 frames
+    else:
+        np.random.seed(None)  # Use current time
+    
+    # Generate random blend shapes with some structure
     blend_shapes = np.random.random(52) * 0.5  # Scale down for more realistic values
+    
+    # Add some periodic variation to make it more interesting
+    if frame_count is not None:
+        # Add sine wave variation to some blend shapes
+        for i in range(0, 52, 8):  # Every 8th blend shape gets variation
+            variation = 0.2 * np.sin(frame_count * 0.1 + i * 0.5)
+            blend_shapes[i] = np.clip(blend_shapes[i] + variation, 0, 1)
+    
     return blend_shapes.tolist()
 
 def display_emotion_info(frame, emotion, confidence, emotion_emojis, all_confidences=None):
