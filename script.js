@@ -164,23 +164,9 @@ function handleClassButtonClick(event) {
     currentEmotionClass = emotion;
 
     // Reset all buttons' state and set the new one
-    emotionButtons.forEach(btn => btn.classList.remove('mdc-button--collecting'));
     event.currentTarget.classList.add('mdc-button--collecting');
   }
   updateTrainingStatus();
-}
-
-// Function to handle the Train button click
-function handleTrainButtonClick() {
-  if (classifier.getNumClasses() > 0) {
-    isTraining = false;
-    currentEmotionClass = null;
-    emotionButtons.forEach(btn => btn.disabled = true);
-    trainButton.disabled = true;
-    trainButton.textContent = '✅ Prediction Mode Active';
-    
-    updateTrainingStatus();
-  }
 }
 
 // Function to handle the Train button click
