@@ -314,20 +314,20 @@
       text-align: center;
     }
     
-    /* Dynamic Input Styling */
-    .dynamic-input-card {
-      margin-bottom: 2rem;
-    }
-    
-    .input-group {
-      display: flex;
-      gap: 1rem;
+    /* Emoji Dropdown Styling */
+    .emoji-selection {
       margin: 1.5rem 0;
-      align-items: center;
     }
     
-    #dynamic-emoji-input {
-      flex: 1;
+    .emoji-selection label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #2c3e50;
+      font-size: 1.1rem;
+    }
+    
+    .emoji-dropdown {
+      width: 100%;
       padding: 1rem;
       border: 2px solid rgba(255,255,255,0.3);
       border-radius: 15px;
@@ -337,56 +337,37 @@
       font-family: 'Inter', sans-serif;
       backdrop-filter: blur(10px);
       transition: all 0.3s ease;
+      cursor: pointer;
     }
     
-    #dynamic-emoji-input:focus {
+    .emoji-dropdown:focus {
       outline: none;
       border-color: #667eea;
       background: rgba(255,255,255,0.2);
       box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
     }
     
-    #dynamic-emoji-input::placeholder {
-      color: rgba(51, 51, 51, 0.6);
+    .emoji-dropdown option {
+      padding: 0.5rem;
+      font-size: 1.1rem;
     }
     
-    #set-dynamic-emoji {
+    #collect-button {
       background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
       color: white;
       border-radius: 25px;
-      min-width: 120px;
-      white-space: nowrap;
+      min-width: 200px;
+      margin-top: 1rem;
     }
     
-    .emoji-examples {
-      margin-top: 1.5rem;
-      padding: 1rem;
-      background: rgba(255,255,255,0.05);
-      border-radius: 15px;
+    #collect-button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
     }
     
-    .example-emojis {
-      display: flex;
-      gap: 1rem;
-      margin-top: 0.5rem;
-      flex-wrap: wrap;
-    }
-    
-    .example-emoji {
-      display: inline-block;
-      padding: 0.5rem 1rem;
-      background: rgba(255,255,255,0.1);
-      border-radius: 20px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-size: 1.2rem;
-      border: 2px solid transparent;
-    }
-    
-    .example-emoji:hover {
-      background: rgba(255,255,255,0.2);
-      border-color: #667eea;
-      transform: scale(1.05);
+    #collect-button.mdc-button--collecting {
+      background: linear-gradient(45deg, #4ecdc4, #44a08d);
+      animation: pulse 1.5s infinite;
     }
     
     /* Override Material Design button styles */
@@ -477,15 +458,46 @@
         <h2><span class="emoji">🧠</span> Custom Model Trainer</h2>
         <p>Collect data points for each custom expression and then train the model.</p>
 
+        <div class="emoji-selection">
+          <label for="emoji-dropdown"><strong>Select Emotion to Collect:</strong></label>
+          <select id="emoji-dropdown" class="emoji-dropdown">
+            <option value="">Choose an emotion...</option>
+            <option value="😀" data-emotion="Happy">😀 Happy</option>
+            <option value="🤣" data-emotion="Laughing">🤣 Laughing</option>
+            <option value="😂" data-emotion="Joy">😂 Joy</option>
+            <option value="😅" data-emotion="Nervous">😅 Nervous</option>
+            <option value="🥲" data-emotion="Relief">🥲 Relief</option>
+            <option value="🥹" data-emotion="Emotional">🥹 Emotional</option>
+            <option value="😉" data-emotion="Wink">😉 Wink</option>
+            <option value="😊" data-emotion="Smile">😊 Smile</option>
+            <option value="🥰" data-emotion="Love">🥰 Love</option>
+            <option value="😍" data-emotion="Heart">😍 Heart</option>
+            <option value="😘" data-emotion="Kiss">😘 Kiss</option>
+            <option value="😐" data-emotion="Neutral">😐 Neutral</option>
+            <option value="😑" data-emotion="Expressionless">😑 Expressionless</option>
+            <option value="😒" data-emotion="Unamused">😒 Unamused</option>
+            <option value="🙄" data-emotion="EyeRoll">🙄 Eye Roll</option>
+            <option value="😮‍💨" data-emotion="Sigh">😮‍💨 Sigh</option>
+            <option value="😬" data-emotion="Grimace">😬 Grimace</option>
+            <option value="🤥" data-emotion="Lying">🤥 Lying</option>
+            <option value="😌" data-emotion="Calm">😌 Calm</option>
+            <option value="😔" data-emotion="Sad">😔 Sad</option>
+            <option value="😪" data-emotion="Sleepy">😪 Sleepy</option>
+            <option value="🤤" data-emotion="Drooling">🤤 Drooling</option>
+            <option value="😴" data-emotion="Sleeping">😴 Sleeping</option>
+            <option value="😠" data-emotion="Angry">😠 Angry</option>
+            <option value="😮" data-emotion="Surprised">😮 Surprised</option>
+            <option value="😕" data-emotion="Confused">😕 Confused</option>
+            <option value="😟" data-emotion="Worried">😟 Worried</option>
+            <option value="😨" data-emotion="Fear">😨 Fear</option>
+            <option value="😢" data-emotion="Cry">😢 Cry</option>
+            <option value="😞" data-emotion="Disappointed">😞 Disappointed</option>
+          </select>
+        </div>
+
         <div id="custom-emotions-container">
-          <button id="class-grinning" class="mdc-button mdc-button--raised mdc-button--class" data-emotion="Grinning">
-            <span class="mdc-button__label">Collect Grinning 😬</span>
-          </button>
-          <button id="class-tired" class="mdc-button mdc-button--raised mdc-button--class" data-emotion="Tired">
-            <span class="mdc-button__label">Collect Tired 😫</span>
-          </button>
-          <button id="class-pouting" class="mdc-button mdc-button--raised mdc-button--class" data-emotion="Pouting">
-            <span class="mdc-button__label">Collect Pouting 😒</span>
+          <button id="collect-button" class="mdc-button mdc-button--raised mdc-button--class" disabled>
+            <span class="mdc-button__label">📊 Start Collecting</span>
           </button>
         </div>
 
@@ -507,31 +519,6 @@
             <span class="emoji">😐</span>
           </div>
           <p id="emotion-label" style="text-align: center; font-size: 1.5rem; font-weight: bold; color: #764ba2;">Neutral</p>
-        </div>
-        
-        <!-- Dynamic Emoji Input Card -->
-        <div class="card dynamic-input-card">
-          <h2><span class="emoji">✏️</span> Dynamic Emoji Input</h2>
-          <p>Type any emoji or text to display it in the main emotion area.</p>
-          
-          <div class="input-group">
-            <input type="text" id="dynamic-emoji-input" placeholder="Type an emoji or text... (e.g., 🎉 Happy!)" maxlength="50">
-            <button id="set-dynamic-emoji" class="mdc-button mdc-button--raised">
-              <span class="mdc-button__ripple"></span>
-              <span class="mdc-button__label">SET EMOJI</span>
-            </button>
-          </div>
-          
-          <div class="emoji-examples">
-            <p><strong>Try these examples:</strong></p>
-            <div class="example-emojis">
-              <span class="example-emoji" data-emoji="🎉 Celebration!">🎉</span>
-              <span class="example-emoji" data-emoji="🤯 Mind Blown">🤯</span>
-              <span class="example-emoji" data-emoji="😍 Love It">😍</span>
-              <span class="example-emoji" data-emoji="🔥 Fire!">🔥</span>
-              <span class="example-emoji" data-emoji="💯 Perfect">💯</span>
-            </div>
-          </div>
         </div>
         
         <div class="card">

@@ -31,12 +31,8 @@ let sampleCount = {}; // e.g., { 'Grinning': 0, 'Tired': 0 }
 // NEW: UI Elements for Training
 const trainingStatusEl = document.getElementById("training-status");
 const trainButton = document.getElementById("train-button");
-const emotionButtons = document.querySelectorAll("#custom-emotions-container button");
-
-// NEW: UI Elements for Dynamic Emoji Input
-const dynamicEmojiInput = document.getElementById("dynamic-emoji-input");
-const setDynamicEmojiButton = document.getElementById("set-dynamic-emoji");
-const exampleEmojis = document.querySelectorAll(".example-emoji");
+const emojiDropdown = document.getElementById("emoji-dropdown");
+const collectButton = document.getElementById("collect-button");
 
 let faceLandmarker;
 let runningMode = "IMAGE";
@@ -102,6 +98,56 @@ async function createFaceLandmarker() {
 }
 createFaceLandmarker();
 
+// Function to handle dropdown selection
+function handleDropdownChange() {
+  const selectedOption = emojiDropdown.options[emojiDropdown.selectedIndex];
+  
+  if (selectedOption.value) {
+    const emotion = selectedOption.dataset.emotion;
+    const emoji = selectedOption.value;
+    
+    // Enable collect button and update its text
+    collectButton.disabled = false;
+    collectButton.innerHTML = `<span class="mdc-button__label">📊 Collect ${emoji} ${emotion}</span>`;
+    
+    // Update current emotion class
+    currentEmotionClass = emotion;
+    
+    console.log(`Selected emotion: ${emotion} (${emoji})`);
+  } else {
+    // No selection, disable collect button
+    collectButton.disabled = true;
+    collectButton.innerHTML = `<span class="mdc-button__label">📊 Start Collecting</span>`;
+    currentEmotionClass = null;
+  }
+}
+
+// Function to handle collect button click
+function handleCollectButtonClick() {
+  if (!currentEmotionClass) {
+    alert("Please select an emotion from the dropdown first.");
+    return;
+  }
+
+  if (isTraining && currentEmotionClass) {
+    // Stop collecting
+    isTraining = false;
+    currentEmotionClass = null;
+    collectButton.classList.remove('mdc-button--collecting');
+    collectButton.innerHTML = `<span class="mdc-button__label">📊 Start Collecting</span>`;
+    collectButton.disabled = true;
+    emojiDropdown.disabled = false;
+  } else {
+    // Start collecting
+    isTraining = true;
+    collectButton.classList.add('mdc-button--collecting');
+    collectButton.innerHTML = `<span class="mdc-button__label">⏹️ Stop Collecting</span>`;
+    emojiDropdown.disabled = true;
+  }
+  
+  updateTrainingStatus();
+}
+
 // Function to handle class button clicks
 function handleClassButtonClick(event) {
   const emotion = event.currentTarget.dataset.emotion;
@@ -137,147 +183,28 @@ function handleTrainButtonClick() {
   }
 }
 
-// Comprehensive emoji mapping for emotions
-const emotionEmojiMap = {
-  // Happy emotions
-  'happy': '😀', 'grinning': '😀', 'grin': '😀',
-  'laughing': '🤣', 'laugh': '🤣', 'lol': '🤣',
-  'joy': '😂', 'tears': '😂', 'crying': '😂',
-  'sweat': '😅', 'nervous': '😅', 'awkward': '😅',
-  'relief': '🥲', 'content': '🥲', 'relieved': '🥲',
-  'holding': '🥹', 'emotional': '🥹', 'touched': '🥹',
-  'wink': '😉', 'winking': '😉',
-  'smile': '😊', 'smiling': '😊', 'blush': '😊',
-  'love': '🥰', 'affection': '🥰', 'adore': '🥰',
-  'heart': '😍', 'hearts': '😍', 'crush': '😍',
-  'kiss': '😘', 'kissing': '😘', 'blow': '😘',
-  'pucker': '😗', 'puckered': '😗',
-  'smile kiss': '😙', 'smiling kiss': '😙',
-  'closed kiss': '😚', 'closed eyes kiss': '😚',
-  
-  // Neutral emotions
-  'neutral': '😐', 'meh': '😐', 'ok': '😐',
-  'expressionless': '😑', 'blank': '😑', 'deadpan': '😑',
-  'unamused': '😒', 'annoyed': '😒', 'bored': '😒',
-  'roll': '🙄', 'eyeroll': '🙄', 'rolling': '🙄',
-  'sigh': '😮‍💨', 'exhausted': '😮‍💨', 'tired': '😮‍💨',
-  'grimace': '😬', 'cringe': '😬', 'awkward': '😬',
-  'lying': '🤥', 'pinocchio': '🤥', 'fib': '🤥',
-  'calm': '😌', 'peaceful': '😌', 'serene': '😌',
-  'pensive': '😔', 'sad': '😔', 'melancholy': '😔',
-  'sleepy': '😪', 'drowsy': '😪', 'tired': '😪',
-  'drooling': '🤤', 'hungry': '🤤', 'craving': '🤤',
-  'sleeping': '😴', 'asleep': '😴', 'zzz': '😴',
-  
-  // Additional emotions
-  'angry': '😠', 'mad': '😠', 'furious': '😠',
-  'surprised': '😮', 'shocked': '😮', 'wow': '😮',
-  'confused': '😕', 'huh': '😕', 'what': '😕',
-  'worried': '😟', 'concerned': '😟', 'anxious': '😟',
-  'fear': '😨', 'scared': '😨', 'afraid': '😨',
-  'cry': '😢', 'crying': '😢', 'tears': '😢',
-  'disappointed': '😞', 'let down': '😞', 'sad': '😞'
-};
-
-// Function to detect if a character is an emoji
-function isEmoji(char) {
-  const emojiRegex = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
-  return emojiRegex.test(char);
-}
-
-// Function to find emoji for text input
-function findEmojiForText(text) {
-  const lowerText = text.toLowerCase().trim();
-  
-  // Direct match
-  if (emotionEmojiMap[lowerText]) {
-    return emotionEmojiMap[lowerText];
+// Function to handle the Train button click
+function handleTrainButtonClick() {
+  if (classifier.getNumClasses() > 0) {
+    isTraining = false;
+    currentEmotionClass = null;
+    collectButton.disabled = true;
+    emojiDropdown.disabled = true;
+    trainButton.disabled = true;
+    trainButton.textContent = '✅ Prediction Mode Active';
+    
+    updateTrainingStatus();
   }
-  
-  // Partial match
-  for (const [key, emoji] of Object.entries(emotionEmojiMap)) {
-    if (lowerText.includes(key) || key.includes(lowerText)) {
-      return emoji;
-    }
-  }
-  
-  return null; // No match found
-}
-
-// Function to handle dynamic emoji setting
-function setDynamicEmoji() {
-  const userInput = dynamicEmojiInput.value.trim();
-
-  if (userInput) {
-    let emoji = '';
-    let emotionText = '';
-    
-    // Check if the first character is an emoji
-    const firstChar = Array.from(userInput)[0];
-    
-    if (isEmoji(firstChar)) {
-      // First character is an emoji
-      emoji = firstChar;
-      // The rest is the text
-      emotionText = userInput.substring(firstChar.length).trim() || "Custom Emotion";
-    } else {
-      // No emoji found, try to find emoji for the text
-      const foundEmoji = findEmojiForText(userInput);
-      
-      if (foundEmoji) {
-        emoji = foundEmoji;
-        emotionText = userInput;
-      } else {
-        // No emoji mapping found, use default
-        emoji = "😐";
-        emotionText = userInput;
-      }
-    }
-
-    // Update the main display elements
-    bigEmojiOutput.innerHTML = `<span class="emoji">${emoji}</span>`;
-    emotionLabel.textContent = emotionText;
-    
-    // Clear the input field
-    dynamicEmojiInput.value = '';
-    
-    console.log(`🎨 Dynamic Emoji Set: ${emoji} - ${emotionText}`);
-  } else {
-    alert("Please type an emoji or text.");
-  }
-}
-
-// Function to handle example emoji clicks
-function handleExampleEmojiClick(event) {
-  const emojiData = event.currentTarget.dataset.emoji;
-  dynamicEmojiInput.value = emojiData;
-  setDynamicEmoji();
 }
 
 // Attach listeners once the document is ready
 window.addEventListener('DOMContentLoaded', () => {
-  emotionButtons.forEach(button => {
-    // Initialize sample counts
-    sampleCount[button.dataset.emotion] = 0;
-    button.addEventListener('click', handleClassButtonClick);
-  });
-
+  // Dropdown and collect button listeners
+  emojiDropdown.addEventListener('change', handleDropdownChange);
+  collectButton.addEventListener('click', handleCollectButtonClick);
+  
+  // Train button listener
   trainButton.addEventListener('click', handleTrainButtonClick);
-  
-  // Dynamic emoji input listeners
-  setDynamicEmojiButton.addEventListener('click', setDynamicEmoji);
-  
-  // Example emoji click listeners
-  exampleEmojis.forEach(emoji => {
-    emoji.addEventListener('click', handleExampleEmojiClick);
-  });
-  
-  // Allow Enter key to trigger emoji setting
-  dynamicEmojiInput.addEventListener('keypress', (event) => {
-    if (event.key === 'Enter') {
-      setDynamicEmoji();
-    }
-  });
 });
 
 /********************************************************************
