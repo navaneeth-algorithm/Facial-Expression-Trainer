@@ -226,7 +226,7 @@
     /* Two Column Layout */
     .two-column-layout {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 2rem;
       margin-bottom: 2rem;
     }
@@ -242,7 +242,7 @@
     
     .results-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 2rem;
       margin-top: 1.5rem;
     }
@@ -418,37 +418,29 @@
     </div>
 
     <section id="demos" class="invisible">
-      <!-- Two Column Layout -->
-      <div class="two-column-layout">
-        <!-- Left Column - Static Image Analysis -->
-        <div class="column">
-          <div class="card">
-            <h2><span class="emoji">📸</span> Static Image Analysis</h2>
-            <p>Click on the image below to analyze facial landmarks and expressions.</p>
-
-            <div class="detectOnClick">
-              <img src="https://storage.googleapis.com/mediapipe-assets/portrait.jpg" width="100%" crossorigin="anonymous" title="Click to get detection!" />
-            </div>
-          </div>
+      <!-- Current Emotion Display -->
+      <div class="card" id="emoji-display-card">
+        <h2><span class="emoji">🎭</span> Current Emotion</h2>
+        <div id="big-emoji-output" style="font-size: 8rem; text-align: center; margin-top: 10px;">
+          <span class="emoji">😐</span>
         </div>
+        <p id="emotion-label" style="text-align: center; font-size: 1.5rem; font-weight: bold; color: #764ba2;">Neutral</p>
+      </div>
 
-        <!-- Right Column - Live Video Detection -->
-        <div class="column">
-          <div class="card">
-            <h2><span class="emoji">📹</span> Live Webcam Detection</h2>
-            <p>Hold your face in front of your webcam for real-time analysis.</p>
+      <!-- Live Video Detection -->
+      <div class="card">
+        <h2><span class="emoji">📹</span> Live Webcam Detection</h2>
+        <p>Hold your face in front of your webcam for real-time analysis.</p>
 
-            <div id="liveView" class="videoView">
-              <button id="webcamButton" class="mdc-button mdc-button--raised">
-                <span class="mdc-button__ripple"></span>
-                <span class="mdc-button__label">🚀 ENABLE WEBCAM</span>
-              </button>
-              
-              <div class="video-container">
-                <video id="webcam" autoplay playsinline muted></video>
-                <canvas class="output_canvas" id="output_canvas"></canvas>
-              </div>
-            </div>
+        <div id="liveView" class="videoView">
+          <button id="webcamButton" class="mdc-button mdc-button--raised">
+            <span class="mdc-button__ripple"></span>
+            <span class="mdc-button__label">🚀 ENABLE WEBCAM</span>
+          </button>
+          
+          <div class="video-container">
+            <video id="webcam" autoplay playsinline muted></video>
+            <canvas class="output_canvas" id="output_canvas"></canvas>
           </div>
         </div>
       </div>
@@ -512,28 +504,11 @@
 
       <!-- Results Section Below -->
       <div class="results-section">
-        <!-- Main Emoji Display Card -->
-        <div class="card" id="emoji-display-card">
-          <h2 style="margin-bottom: 0;"><span class="emoji">🎭</span> Current Emotion</h2>
-          <div id="big-emoji-output" style="font-size: 8rem; text-align: center; margin-top: 10px;">
-            <span class="emoji">😐</span>
-          </div>
-          <p id="emotion-label" style="text-align: center; font-size: 1.5rem; font-weight: bold; color: #764ba2;">Neutral</p>
-        </div>
-        
         <div class="card">
           <h2><span class="emoji">📊</span> Analysis Results</h2>
           <p>Real-time facial analysis data and emotion detection results.</p>
           
           <div class="results-grid">
-            <!-- Static Image Results -->
-            <div class="result-card">
-              <h3><span class="emoji">📸</span> Static Image Blend Shapes</h3>
-              <div class="blend-shapes">
-                <ul class="blend-shapes-list" id="image-blend-shapes"></ul>
-              </div>
-            </div>
-
             <!-- Live Video Results -->
             <div class="result-card">
               <h3><span class="emoji">📹</span> Live Video Blend Shapes</h3>
