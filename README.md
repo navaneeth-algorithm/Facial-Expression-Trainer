@@ -171,6 +171,21 @@ python main.py path/to/exported_model.json
 python demo_realtime.py
 ```
 
+## 🎥 Demo Video
+
+Watch the project in action! This video demonstrates the complete workflow from training custom emotions to real-time detection.
+
+[![AI Face Expression Detection Demo](https://img.youtube.com/vi/oyKTXbLogf0/maxresdefault.jpg)](https://www.youtube.com/watch?v=oyKTXbLogf0)
+
+**Click the image above to watch the full demo on YouTube**
+
+### **What You'll See in the Demo:**
+- **Web Application Training** - Interactive emotion collection interface
+- **Real-time Detection** - Live emotion classification with confidence scores
+- **Python Application** - Cross-platform real-time video analysis
+- **Model Export/Import** - Seamless workflow between web and Python
+- **Custom Emotions** - Training personalized emotion recognition models
+
 ## 📸 Screenshots
 
 ### **Web Application**
