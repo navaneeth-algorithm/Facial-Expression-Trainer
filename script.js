@@ -392,12 +392,42 @@ async function predictWebcam() {
             // Find the confidence score for the predicted label
             const score = confidences[label] || 0;
             
-            // Get the emoji (you'll need to define a map for this)
+            // Get the emoji (comprehensive map for all emotions)
             const emojiMap = {
-              'Grinning': '😬',
+              'Happy': '😀',
+              'Laughing': '🤣',
+              'Joy': '😂',
+              'Nervous': '😅',
+              'Relief': '🥲',
+              'Emotional': '🥹',
+              'Wink': '😉',
+              'Smile': '😊',
+              'Love': '🥰',
+              'Heart': '😍',
+              'Kiss': '😘',
+              'Neutral': '😐',
+              'Expressionless': '😑',
+              'Unamused': '😒',
+              'EyeRoll': '🙄',
+              'Sigh': '😮‍💨',
+              'Grimace': '😬',
+              'Lying': '🤥',
+              'Calm': '😌',
+              'Sad': '😔',
+              'Sleepy': '😪',
+              'Drooling': '🤤',
+              'Sleeping': '😴',
+              'Angry': '😠',
+              'Surprised': '😮',
+              'Confused': '😕',
+              'Worried': '😟',
+              'Fear': '😨',
+              'Cry': '😢',
+              'Disappointed': '😞',
+              // Legacy mappings for backward compatibility
+              'Grinning': '😀',
               'Tired': '😫',
-              'Pouting': '😒',
-              // Add more here
+              'Pouting': '😒'
             };
 
             // The new primary emotion result
