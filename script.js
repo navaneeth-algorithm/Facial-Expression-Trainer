@@ -18,6 +18,10 @@ const demosSection = document.getElementById("demos");
 const imageBlendShapes = document.getElementById("image-blend-shapes");
 const videoBlendShapes = document.getElementById("video-blend-shapes");
 
+// NEW: Elements for the Emoji Display
+const bigEmojiOutput = document.getElementById("big-emoji-output");
+const emotionLabel = document.getElementById("emotion-label");
+
 let faceLandmarker;
 let runningMode = "IMAGE";
 let enableWebcamButton;
@@ -344,6 +348,25 @@ async function predictWebcam() {
     
     drawBlendShapes(videoBlendShapes, results?.faceBlendshapes);
 
+    // --- NEW EMOJI LOGIC ---
+    if (results?.faceBlendshapes && results.faceBlendshapes.length > 0) {
+      const emotion = classifyEmotion(results.faceBlendshapes);
+
+      // Update the big emoji display
+      bigEmojiOutput.innerHTML = `<span class="emoji">${emotion.emoji}</span>`;
+      
+      // Update the emotion text label
+      emotionLabel.textContent = emotion.name;
+      
+      // Debug logging
+      console.log(`🎭 Emotion detected: ${emotion.name} (${emotion.emoji}) - Score: ${emotion.score.toFixed(3)}`);
+    } else if (webcamRunning === true) {
+      // If no face is detected, display a prompt
+      bigEmojiOutput.innerHTML = `<span class="emoji">👤</span>`;
+      emotionLabel.textContent = "No Face Detected";
+    }
+    // --- END NEW EMOJI LOGIC ---
+
     // Call this function again to keep predicting when the browser is ready.
     if (webcamRunning === true) {
       window.requestAnimationFrame(predictWebcam);
@@ -351,6 +374,70 @@ async function predictWebcam() {
   } catch (error) {
     console.error("❌ Error in predictWebcam:", error);
   }
+}
+
+/**
+ * Classifies the 52 blend shape scores into a single major emotion.
+ * @param {Array} blendShapes - The array of blend shape categories from MediaPipe.
+ * @returns {object} An object containing the primary emotion name and its emoji.
+ */
+function classifyEmotion(blendShapes) {
+  if (!blendShapes || blendShapes.length === 0) {
+    return { name: "Detecting...", emoji: "🤔" };
+  }
+
+  // Convert blendShapes array to a more easily accessible key-value map
+  const scores = blendShapes[0].categories.reduce((acc, category) => {
+    acc[category.categoryName] = category.score;
+    return acc;
+  }, {});
+
+  let primaryEmotion = { name: "Neutral", emoji: "😐", score: 0.2 };
+
+  // --- Primary Emotion Classification Logic ---
+  // A threshold is used to ensure the emotion is strong enough to be classified.
+  const threshold = 0.55; 
+
+  // 1. HAPPY (Smile)
+  // A smile is often a combination of Mouth_Smile and Cheek_Squint.
+  const happyScore = scores.mouthSmileLeft * 0.5 + scores.mouthSmileRight * 0.5 + scores.cheekSquintLeft * 0.2 + scores.cheekSquintRight * 0.2;
+  if (happyScore > threshold) {
+    primaryEmotion = { name: "Happy", emoji: "😊", score: happyScore };
+  }
+
+  // 2. SURPRISE (Wide eyes and open mouth)
+  const surpriseScore = (scores.mouthOpen || 0) * 0.4 + (scores.eyeWideLeft || 0) * 0.3 + (scores.eyeWideRight || 0) * 0.3;
+  if (surpriseScore > threshold && surpriseScore > primaryEmotion.score) {
+    primaryEmotion = { name: "Surprised", emoji: "😮", score: surpriseScore };
+  }
+
+  // 3. ANGER/SADNESS (Frown/Eyebrow furrow)
+  // This can be tricky, using Brow_Down and Mouth_Frown as key indicators.
+  const angryScore = (scores.browDownLeft || 0) * 0.5 + (scores.browDownRight || 0) * 0.5;
+  const sadScore = (scores.mouthFrownLeft || 0) * 0.3 + (scores.mouthFrownRight || 0) * 0.3 + (scores.browInnerUp || 0) * 0.4;
+  
+  if (angryScore > threshold && angryScore > primaryEmotion.score) {
+    primaryEmotion = { name: "Angry", emoji: "😠", score: angryScore };
+  } else if (sadScore > threshold && sadScore > primaryEmotion.score) {
+    primaryEmotion = { name: "Sad", emoji: "😞", score: sadScore };
+  }
+
+  // 4. MOUTH OPEN (Non-emotional, like talking/yawn)
+  if ((scores.mouthOpen || 0) > 0.6 && primaryEmotion.name === "Neutral") {
+    primaryEmotion = { name: "Talking/Yawn", emoji: "🗣️", score: scores.mouthOpen };
+  }
+  
+  // 5. WINK (A specific action)
+  // Check for a left eye blink score significantly higher than the right eye blink score.
+  if ((scores.eyeBlinkLeft || 0) > 0.8 && (scores.eyeBlinkRight || 0) < 0.2) {
+    // If the person is winking with their left eye (your left, camera's right)
+    primaryEmotion = { name: "Wink", emoji: "😉", score: scores.eyeBlinkLeft };
+  } else if ((scores.eyeBlinkRight || 0) > 0.8 && (scores.eyeBlinkLeft || 0) < 0.2) {
+    // If the person is winking with their right eye (your right, camera's left)
+    primaryEmotion = { name: "Wink", emoji: "😉", score: scores.eyeBlinkRight };
+  }
+
+  return primaryEmotion;
 }
 
 function drawBlendShapes(el, blendShapes) {
