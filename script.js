@@ -32,6 +32,7 @@ const trainingStatusEl = document.getElementById("training-status");
 const trainButton = document.getElementById("train-button");
 const emojiDropdown = document.getElementById("emoji-dropdown");
 const collectButton = document.getElementById("collect-button");
+const exportButton = document.getElementById("export-button");
 
 let faceLandmarker;
 let runningMode = "IMAGE";
@@ -178,7 +179,64 @@ function handleTrainButtonClick() {
     trainButton.disabled = true;
     trainButton.textContent = '✅ Prediction Mode Active';
     
+    // Enable export button after training
+    exportButton.disabled = false;
+    
     updateTrainingStatus();
+  }
+}
+
+// Function to handle the Export button click
+function handleExportButtonClick() {
+  if (classifier.getNumClasses() === 0) {
+    alert("No trained model to export. Please train the model first.");
+    return;
+  }
+
+  try {
+    // Export the classifier dataset
+    const dataset = classifier.getClassifierDataset();
+    
+    // Create export data structure
+    const exportData = {
+      metadata: {
+        version: "1.0",
+        exportDate: new Date().toISOString(),
+        totalClasses: classifier.getNumClasses(),
+        totalSamples: Object.values(sampleCount).reduce((sum, count) => sum + count, 0),
+        sampleCounts: sampleCount,
+        featureDimensions: 52, // MediaPipe blend shapes
+        description: "KNN Classifier trained on MediaPipe Face Blend Shapes"
+      },
+      classes: Object.keys(sampleCount),
+      dataset: {}
+    };
+
+    // Convert TensorFlow.js tensors to regular arrays for JSON export
+    for (const [label, tensor] of Object.entries(dataset)) {
+      exportData.dataset[label] = tensor.arraySync();
+    }
+
+    // Create downloadable JSON file
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    // Create download link
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `emotion_classifier_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    console.log("✅ Model exported successfully!");
+    alert(`Model exported successfully!\n\nClasses: ${exportData.metadata.totalClasses}\nSamples: ${exportData.metadata.totalSamples}\n\nFile: ${a.download}`);
+    
+  } catch (error) {
+    console.error("❌ Error exporting model:", error);
+    alert("Error exporting model. Please try again.");
   }
 }
 
@@ -190,6 +248,9 @@ window.addEventListener('DOMContentLoaded', () => {
   
   // Train button listener
   trainButton.addEventListener('click', handleTrainButtonClick);
+  
+  // Export button listener
+  exportButton.addEventListener('click', handleExportButtonClick);
 });
 
 /********************************************************************
