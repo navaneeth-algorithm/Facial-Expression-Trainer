@@ -195,6 +195,7 @@ def real_time_emotion_detection(classifier, metadata, classes):
     frame_count = 0
     last_prediction = "Neutral"
     last_confidence = 0.0
+    last_all_confidences = {}
     
     while True:
         ret, frame = cap.read()
@@ -249,12 +250,13 @@ def real_time_emotion_detection(classifier, metadata, classes):
                 # Update display values
                 last_prediction = prediction
                 last_confidence = confidence
+                last_all_confidences = confidences
                 
             except Exception as e:
                 print(f"⚠️  Prediction error: {e}")
         
         # Display emotion information on frame
-        display_emotion_info(frame, last_prediction, last_confidence, emotion_emojis)
+        display_emotion_info(frame, last_prediction, last_confidence, emotion_emojis, last_all_confidences)
         
         # Show frame
         cv2.imshow('Real-time Emotion Detection', frame)
@@ -273,6 +275,7 @@ def real_time_emotion_detection(classifier, metadata, classes):
             # Reset detection
             last_prediction = "Neutral"
             last_confidence = 0.0
+            last_all_confidences = {}
             print("🔄 Detection reset")
     
     # Cleanup
@@ -299,41 +302,67 @@ def generate_mock_blend_shapes():
     blend_shapes = np.random.random(52) * 0.5  # Scale down for more realistic values
     return blend_shapes.tolist()
 
-def display_emotion_info(frame, emotion, confidence, emotion_emojis):
+def display_emotion_info(frame, emotion, confidence, emotion_emojis, all_confidences=None):
     """
-    Display emotion information on the video frame.
+    Display emotion information on the video frame with all emotion percentages.
     """
     # Get emoji for the emotion
     emoji = emotion_emojis.get(emotion, '❓')
     
-    # Prepare text
-    emotion_text = f"{emoji} {emotion}"
-    confidence_text = f"Confidence: {confidence:.1%}"
-    
     # Set text properties
     font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = 1.0
-    thickness = 2
+    small_font_scale = 0.5
+    medium_font_scale = 0.7
+    large_font_scale = 1.0
+    thickness = 1
     
-    # Get text size for background rectangle
-    (text_width, text_height), baseline = cv2.getTextSize(emotion_text, font, font_scale, thickness)
-    (conf_width, conf_height), _ = cv2.getTextSize(confidence_text, font, font_scale * 0.7, thickness)
+    # Calculate panel dimensions
+    panel_width = 300
+    panel_height = 200
     
-    # Draw background rectangle
-    padding = 10
-    rect_width = max(text_width, conf_width) + 2 * padding
-    rect_height = text_height + conf_height + 3 * padding
+    # Draw main background rectangle
+    cv2.rectangle(frame, (10, 10), (10 + panel_width, 10 + panel_height), (0, 0, 0), -1)
+    cv2.rectangle(frame, (10, 10), (10 + panel_width, 10 + panel_height), (255, 255, 255), 2)
     
-    cv2.rectangle(frame, (10, 10), (10 + rect_width, 10 + rect_height), (0, 0, 0), -1)
-    cv2.rectangle(frame, (10, 10), (10 + rect_width, 10 + rect_height), (255, 255, 255), 2)
+    # Draw primary emotion (larger)
+    primary_text = f"{emoji} {emotion}"
+    cv2.putText(frame, primary_text, (20, 40), font, large_font_scale, (0, 255, 0), thickness + 1)
     
-    # Draw emotion text
-    cv2.putText(frame, emotion_text, (10 + padding, 10 + text_height + padding), 
-                font, font_scale, (0, 255, 0), thickness)
+    # Draw primary confidence
+    primary_conf_text = f"{confidence:.1%}"
+    cv2.putText(frame, primary_conf_text, (20, 70), font, medium_font_scale, (255, 255, 0), thickness)
     
-    # Draw confidence text
-    cv2.putText(frame, confidence_text, (10 + padding, 10 + text_height + conf_height + 2 * padding), 
-                font, font_scale * 0.7, (255, 255, 0), thickness)
+    # Draw separator line
+    cv2.line(frame, (20, 85), (20 + panel_width - 40, 85), (255, 255, 255), 1)
+    
+    # Draw all emotion percentages if available
+    if all_confidences:
+        y_offset = 105
+        cv2.putText(frame, "All Emotions:", (20, y_offset), font, small_font_scale, (200, 200, 200), thickness)
+        y_offset += 20
+        
+        # Sort emotions by confidence (highest first)
+        sorted_emotions = sorted(all_confidences.items(), key=lambda x: x[1], reverse=True)
+        
+        for i, (emotion_name, conf) in enumerate(sorted_emotions[:5]):  # Show top 5
+            if y_offset > panel_height - 10:  # Don't exceed panel height
+                break
+                
+            # Get emoji for this emotion
+            emoji_char = emotion_emojis.get(emotion_name, '❓')
+            
+            # Color based on confidence
+            if conf > 0.7:
+                color = (0, 255, 0)  # Green for high confidence
+            elif conf > 0.5:
+                color = (0, 255, 255)  # Yellow for medium confidence
+            else:
+                color = (200, 200, 200)  # Gray for low confidence
+            
+            # Draw emotion line
+            emotion_line = f"{emoji_char} {emotion_name}: {conf:.1%}"
+            cv2.putText(frame, emotion_line, (20, y_offset), font, small_font_scale, color, thickness)
+            y_offset += 15
     
     # Add status indicator
     status_color = (0, 255, 0) if confidence > 0.7 else (0, 255, 255) if confidence > 0.5 else (0, 0, 255)
