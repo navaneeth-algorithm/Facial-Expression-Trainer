@@ -392,48 +392,64 @@ function classifyEmotion(blendShapes) {
     return acc;
   }, {});
 
+  // Start with Neutral and a minimal score
   let primaryEmotion = { name: "Neutral", emoji: "😐", score: 0.2 };
 
-  // --- Primary Emotion Classification Logic ---
-  // A threshold is used to ensure the emotion is strong enough to be classified.
-  const threshold = 0.55; 
+  // --- Core Emotion Thresholds ---
+  const strong_threshold = 0.55; 
+  const medium_threshold = 0.35;
 
-  // 1. HAPPY (Smile)
-  // A smile is often a combination of Mouth_Smile and Cheek_Squint.
-  const happyScore = scores.mouthSmileLeft * 0.5 + scores.mouthSmileRight * 0.5 + scores.cheekSquintLeft * 0.2 + scores.cheekSquintRight * 0.2;
-  if (happyScore > threshold) {
+  // 1. HAPPY (Smile is dominant)
+  // Happy is a combination of Mouth_Smile and Cheek_Squint.
+  const happyScore = (scores.mouthSmileLeft || 0) * 0.5 + (scores.mouthSmileRight || 0) * 0.5 + (scores.cheekSquintLeft || 0) * 0.1 + (scores.cheekSquintRight || 0) * 0.1;
+  if (happyScore > strong_threshold) {
     primaryEmotion = { name: "Happy", emoji: "😊", score: happyScore };
   }
 
-  // 2. SURPRISE (Wide eyes and open mouth)
-  const surpriseScore = (scores.mouthOpen || 0) * 0.4 + (scores.eyeWideLeft || 0) * 0.3 + (scores.eyeWideRight || 0) * 0.3;
-  if (surpriseScore > threshold && surpriseScore > primaryEmotion.score) {
+  // 2. SURPRISE (Wide Eyes AND Open Mouth)
+  // Requires both a strong mouth opening AND noticeable eye widening.
+  const surpriseScore = (scores.mouthOpen || 0) * 0.5 + (scores.eyeWideLeft || 0) * 0.25 + (scores.eyeWideRight || 0) * 0.25;
+  
+  // Check for Surprise: High total score AND at least one eye wide.
+  if (surpriseScore > strong_threshold && (scores.eyeWideLeft > medium_threshold || scores.eyeWideRight > medium_threshold)) {
     primaryEmotion = { name: "Surprised", emoji: "😮", score: surpriseScore };
   }
-
-  // 3. ANGER/SADNESS (Frown/Eyebrow furrow)
-  // This can be tricky, using Brow_Down and Mouth_Frown as key indicators.
-  const angryScore = (scores.browDownLeft || 0) * 0.5 + (scores.browDownRight || 0) * 0.5;
-  const sadScore = (scores.mouthFrownLeft || 0) * 0.3 + (scores.mouthFrownRight || 0) * 0.3 + (scores.browInnerUp || 0) * 0.4;
   
-  if (angryScore > threshold && angryScore > primaryEmotion.score) {
-    primaryEmotion = { name: "Angry", emoji: "😠", score: angryScore };
-  } else if (sadScore > threshold && sadScore > primaryEmotion.score) {
-    primaryEmotion = { name: "Sad", emoji: "😞", score: sadScore };
-  }
+  // If a strong emotion is already classified, we can skip Sad/Angry checks to simplify.
+  if (primaryEmotion.name === "Happy" || primaryEmotion.name === "Surprised") return primaryEmotion;
 
-  // 4. MOUTH OPEN (Non-emotional, like talking/yawn)
-  if ((scores.mouthOpen || 0) > 0.6 && primaryEmotion.name === "Neutral") {
-    primaryEmotion = { name: "Talking/Yawn", emoji: "🗣️", score: scores.mouthOpen };
+
+  // 3. SADNESS vs. ANGER
+  
+  // SADNESS: Strong Brow_Inner_Up is the primary feature, combined with a frown.
+  // We prioritize BrowInnerUp over BrowDown for Sadness.
+  const sadScore = (scores.browInnerUp || 0) * 0.6 + ((scores.mouthFrownLeft || 0) + (scores.mouthFrownRight || 0)) * 0.4;
+  
+  // ANGER: Strong Brow_Down is the key feature.
+  const angryScore = ((scores.browDownLeft || 0) + (scores.browDownRight || 0)) * 0.5;
+
+  if (sadScore > angryScore && sadScore > medium_threshold) {
+    // Select Sad if Sad score is dominant and above medium threshold
+    primaryEmotion = { name: "Sad", emoji: "😞", score: sadScore };
+  } else if (angryScore > medium_threshold && angryScore > primaryEmotion.score) {
+    // Select Angry if Angry score is high (and higher than the starting Neutral score)
+    primaryEmotion = { name: "Angry", emoji: "😠", score: angryScore };
+  }
+  
+
+  // 4. TALKING / YAWN (Mouth open with no strong emotion)
+  // If the mouth is open but no strong emotion (like Happy, Sad, Angry, Surprise) was classified,
+  // we default to Talking/Yawn. Lowering the threshold to 0.4 makes it more sensitive.
+  const mouthOpenScore = (scores.mouthOpen || 0);
+  if (mouthOpenScore > 0.4 && primaryEmotion.name === "Neutral") {
+    primaryEmotion = { name: "Talking/Yawn", emoji: "🗣️", score: mouthOpenScore };
   }
   
   // 5. WINK (A specific action)
-  // Check for a left eye blink score significantly higher than the right eye blink score.
+  // Check for a strong unilateral blink.
   if ((scores.eyeBlinkLeft || 0) > 0.8 && (scores.eyeBlinkRight || 0) < 0.2) {
-    // If the person is winking with their left eye (your left, camera's right)
     primaryEmotion = { name: "Wink", emoji: "😉", score: scores.eyeBlinkLeft };
   } else if ((scores.eyeBlinkRight || 0) > 0.8 && (scores.eyeBlinkLeft || 0) < 0.2) {
-    // If the person is winking with their right eye (your right, camera's left)
     primaryEmotion = { name: "Wink", emoji: "😉", score: scores.eyeBlinkRight };
   }
 
