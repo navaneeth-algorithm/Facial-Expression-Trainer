@@ -4,7 +4,43 @@ This folder contains Python scripts to load and use emotion classifier models ex
 
 ## 🚀 Quick Start
 
-### 1. Install Dependencies
+### Option 1: Automated Setup (Recommended)
+
+#### For macOS/Linux:
+```bash
+# Navigate to pythonTest folder
+cd pythonTest
+
+# Run automated setup script
+./setup_env.sh
+```
+
+#### For Windows:
+```cmd
+REM Navigate to pythonTest folder
+cd pythonTest
+
+REM Run automated setup script
+setup_env.bat
+```
+
+### Option 2: Manual Setup
+
+#### 1. Create Virtual Environment
+
+```bash
+# Create virtual environment
+python3 -m venv emotion_env
+
+# Activate virtual environment
+# On macOS/Linux:
+source emotion_env/bin/activate
+
+# On Windows:
+emotion_env\Scripts\activate.bat
+```
+
+#### 2. Install Dependencies
 
 ```bash
 # Install core requirements
@@ -14,14 +50,14 @@ pip install -r requirements.txt
 pip install numpy scikit-learn
 ```
 
-### 2. Export Model from Web App
+#### 3. Export Model from Web App
 
 1. Open the web application in your browser
 2. Train your emotion classifier with different emotions
 3. Click "💾 Export Model" button
 4. Download the JSON file (e.g., `emotion_classifier_2024-01-15.json`)
 
-### 3. Use the Model in Python
+#### 4. Use the Model in Python
 
 ```bash
 # Basic usage
@@ -35,7 +71,85 @@ python main.py ../emotion_classifier_2024-01-15.json
 
 - **`main.py`** - Main script demonstrating model loading and usage
 - **`requirements.txt`** - Python dependencies
+- **`setup_env.sh`** - Automated setup script for macOS/Linux
+- **`setup_env.bat`** - Automated setup script for Windows
+- **`setup.py`** - Manual setup script
 - **`README.md`** - This documentation
+
+## 🔧 Virtual Environment Management
+
+### Creating Virtual Environment
+
+```bash
+# Create virtual environment
+python3 -m venv emotion_env
+
+# Or with specific Python version
+python3.9 -m venv emotion_env
+```
+
+### Activating Virtual Environment
+
+```bash
+# macOS/Linux
+source emotion_env/bin/activate
+
+# Windows Command Prompt
+emotion_env\Scripts\activate.bat
+
+# Windows PowerShell
+emotion_env\Scripts\Activate.ps1
+```
+
+### Deactivating Virtual Environment
+
+```bash
+# Any platform
+deactivate
+```
+
+### Virtual Environment Benefits
+
+- ✅ **Isolated dependencies** - No conflicts with system packages
+- ✅ **Reproducible environment** - Same packages across different machines
+- ✅ **Easy cleanup** - Delete folder to remove everything
+- ✅ **Version control** - requirements.txt tracks exact versions
+
+## 🐛 Troubleshooting
+
+### Virtual Environment Issues
+
+1. **Permission denied on macOS/Linux:**
+   ```bash
+   chmod +x setup_env.sh
+   ./setup_env.sh
+   ```
+
+2. **PowerShell execution policy on Windows:**
+   ```powershell
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+   ```
+
+3. **Python not found:**
+   - Install Python 3.7+ from [python.org](https://python.org)
+   - Make sure Python is in your PATH
+
+4. **Virtual environment not activating:**
+   ```bash
+   # Check if environment exists
+   ls emotion_env/
+   
+   # Recreate if needed
+   rm -rf emotion_env/
+   python3 -m venv emotion_env
+   ```
+
+### Common Issues
+
+1. **File not found**: Make sure the JSON file path is correct
+2. **Invalid JSON**: Ensure the file was exported properly from the web app
+3. **Dimension mismatch**: Verify you're using 52-dimensional feature vectors
+4. **Import errors**: Install required packages with `pip install -r requirements.txt`
 
 ## 🔧 Usage Examples
 
