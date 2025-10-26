@@ -24,23 +24,50 @@ let enableWebcamButton;
 let webcamRunning = false;
 const videoWidth = 480;
 
-// Before we can use HandLandmarker class we must wait for it to finish
+// Before we can use FaceLandmarker class we must wait for it to finish
 // loading. Machine Learning models can be large and take a moment to
 // get everything needed to run.
 async function createFaceLandmarker() {
-  const filesetResolver = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
-  );
-  faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
-    baseOptions: {
-      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
-      delegate: "GPU"
-    },
-    outputFaceBlendshapes: true,
-    runningMode,
-    numFaces: 1
-  });
-  demosSection?.classList.remove("invisible");
+  try {
+    console.log("Initializing FaceLandmarker...");
+    const filesetResolver = await FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+    );
+    
+    // Try GPU first, fallback to CPU if GPU fails
+    let delegate = "GPU";
+    try {
+      faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+        baseOptions: {
+          modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
+          delegate: "GPU"
+        },
+        outputFaceBlendshapes: true,
+        runningMode,
+        numFaces: 1
+      });
+      console.log("✅ FaceLandmarker initialized with GPU delegate");
+    } catch (gpuError) {
+      console.warn("⚠️ GPU delegate failed, falling back to CPU:", gpuError.message);
+      delegate = "CPU";
+      faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+        baseOptions: {
+          modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
+          delegate: "CPU"
+        },
+        outputFaceBlendshapes: true,
+        runningMode,
+        numFaces: 1
+      });
+      console.log("✅ FaceLandmarker initialized with CPU delegate");
+    }
+    
+    demosSection?.classList.remove("invisible");
+    console.log("🎉 FaceLandmarker ready!");
+  } catch (error) {
+    console.error("❌ Failed to initialize FaceLandmarker:", error);
+    alert("Failed to initialize face detection. Please refresh the page and try again.");
+  }
 }
 createFaceLandmarker();
 
@@ -150,7 +177,12 @@ async function handleClick(event) {
 const video = document.getElementById("webcam");
 const canvasElement = document.getElementById("output_canvas");
 
+// Add debugging for video element
+console.log("📹 Video element:", video);
+console.log("🎨 Canvas element:", canvasElement);
+
 const canvasCtx = canvasElement.getContext("2d");
+console.log("🎨 Canvas context:", canvasCtx);
 
 // Check if webcam access is supported.
 function hasGetUserMedia() {
@@ -168,106 +200,156 @@ if (hasGetUserMedia()) {
 
 // Enable the live webcam view and start detection.
 function enableCam(event) {
+  console.log("🎥 EnableCam called");
+  
   if (!faceLandmarker) {
     console.log("Wait! faceLandmarker not loaded yet.");
+    alert("Face detection model is still loading. Please wait a moment and try again.");
     return;
   }
 
   if (webcamRunning === true) {
     webcamRunning = false;
-    enableWebcamButton.innerText = "ENABLE PREDICTIONS";
+    enableWebcamButton.innerText = "🚀 ENABLE WEBCAM";
+    console.log("📹 Webcam stopped");
   } else {
     webcamRunning = true;
-    enableWebcamButton.innerText = "DISABLE PREDICTIONS";
+    enableWebcamButton.innerText = "⏹️ DISABLE WEBCAM";
+    console.log("📹 Starting webcam...");
   }
 
   // getUsermedia parameters.
   const constraints = {
-    video: true
+    video: {
+      width: { ideal: 640 },
+      height: { ideal: 480 },
+      facingMode: "user"
+    }
   };
 
   // Activate the webcam stream.
-  navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-    video.srcObject = stream;
-    video.addEventListener("loadeddata", predictWebcam);
-  });
+  navigator.mediaDevices.getUserMedia(constraints)
+    .then((stream) => {
+      console.log("✅ Webcam stream obtained");
+      video.srcObject = stream;
+      video.addEventListener("loadeddata", () => {
+        console.log("📹 Video loaded, starting prediction");
+        console.log("📹 Video dimensions:", video.videoWidth, "x", video.videoHeight);
+        predictWebcam();
+      });
+      
+      // Add event listeners for debugging
+      video.addEventListener("loadedmetadata", () => {
+        console.log("📹 Video metadata loaded");
+      });
+      
+      video.addEventListener("canplay", () => {
+        console.log("📹 Video can play");
+      });
+      
+      // Also add error handling for video
+      video.addEventListener("error", (e) => {
+        console.error("❌ Video error:", e);
+      });
+    })
+    .catch((error) => {
+      console.error("❌ Error accessing webcam:", error);
+      alert("Could not access webcam. Please check permissions and try again.");
+      webcamRunning = false;
+      enableWebcamButton.innerText = "🚀 ENABLE WEBCAM";
+    });
 }
 
 let lastVideoTime = -1;
 let results = undefined;
 const drawingUtils = new DrawingUtils(canvasCtx);
 async function predictWebcam() {
-  const radio = video.videoHeight / video.videoWidth;
-  video.style.width = videoWidth + "px";
-  video.style.height = videoWidth * radio + "px";
-  canvasElement.style.width = videoWidth + "px";
-  canvasElement.style.height = videoWidth * radio + "px";
-  canvasElement.width = video.videoWidth;
-  canvasElement.height = video.videoHeight;
-  // Now let's start detecting the stream.
-  if (runningMode === "IMAGE") {
-    runningMode = "VIDEO";
-    await faceLandmarker.setOptions({ runningMode: runningMode });
-  }
-  let startTimeMs = performance.now();
-  if (lastVideoTime !== video.currentTime) {
-    lastVideoTime = video.currentTime;
-    results = faceLandmarker.detectForVideo(video, startTimeMs);
-  }
-  if (results?.faceLandmarks) {
-    for (const landmarks of results.faceLandmarks) {
-      drawingUtils.drawConnectors(
-        landmarks,
-        FaceLandmarker.FACE_LANDMARKS_TESSELATION,
-        { color: "#C0C0C070", lineWidth: 1 }
-      );
-      drawingUtils.drawConnectors(
-        landmarks,
-        FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE,
-        { color: "#FF3030" }
-      );
-      drawingUtils.drawConnectors(
-        landmarks,
-        FaceLandmarker.FACE_LANDMARKS_RIGHT_EYEBROW,
-        { color: "#FF3030" }
-      );
-      drawingUtils.drawConnectors(
-        landmarks,
-        FaceLandmarker.FACE_LANDMARKS_LEFT_EYE,
-        { color: "#30FF30" }
-      );
-      drawingUtils.drawConnectors(
-        landmarks,
-        FaceLandmarker.FACE_LANDMARKS_LEFT_EYEBROW,
-        { color: "#30FF30" }
-      );
-      drawingUtils.drawConnectors(
-        landmarks,
-        FaceLandmarker.FACE_LANDMARKS_FACE_OVAL,
-        { color: "#E0E0E0" }
-      );
-      drawingUtils.drawConnectors(
-        landmarks,
-        FaceLandmarker.FACE_LANDMARKS_LIPS,
-        { color: "#E0E0E0" }
-      );
-      drawingUtils.drawConnectors(
-        landmarks,
-        FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS,
-        { color: "#FF3030" }
-      );
-      drawingUtils.drawConnectors(
-        landmarks,
-        FaceLandmarker.FACE_LANDMARKS_LEFT_IRIS,
-        { color: "#30FF30" }
-      );
+  try {
+    // Clear canvas before drawing
+    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+    
+    // Set canvas to overlay the video
+    canvasElement.style.position = "absolute";
+    canvasElement.style.top = "0";
+    canvasElement.style.left = "0";
+    canvasElement.style.width = "100%";
+    canvasElement.style.height = "100%";
+    canvasElement.width = video.videoWidth;
+    canvasElement.height = video.videoHeight;
+    
+    // Now let's start detecting the stream.
+    if (runningMode === "IMAGE") {
+      runningMode = "VIDEO";
+      await faceLandmarker.setOptions({ runningMode: runningMode });
+      console.log("🔄 Switched to VIDEO mode");
     }
-  }
-  drawBlendShapes(videoBlendShapes, results.faceBlendshapes);
+    
+    let startTimeMs = performance.now();
+    if (lastVideoTime !== video.currentTime) {
+      lastVideoTime = video.currentTime;
+      results = faceLandmarker.detectForVideo(video, startTimeMs);
+    }
+    
+    if (results?.faceLandmarks && results.faceLandmarks.length > 0) {
+      console.log(`🎯 Detected ${results.faceLandmarks.length} face(s)`);
+      
+      for (const landmarks of results.faceLandmarks) {
+        drawingUtils.drawConnectors(
+          landmarks,
+          FaceLandmarker.FACE_LANDMARKS_TESSELATION,
+          { color: "#C0C0C070", lineWidth: 1 }
+        );
+        drawingUtils.drawConnectors(
+          landmarks,
+          FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE,
+          { color: "#FF3030" }
+        );
+        drawingUtils.drawConnectors(
+          landmarks,
+          FaceLandmarker.FACE_LANDMARKS_RIGHT_EYEBROW,
+          { color: "#FF3030" }
+        );
+        drawingUtils.drawConnectors(
+          landmarks,
+          FaceLandmarker.FACE_LANDMARKS_LEFT_EYE,
+          { color: "#30FF30" }
+        );
+        drawingUtils.drawConnectors(
+          landmarks,
+          FaceLandmarker.FACE_LANDMARKS_LEFT_EYEBROW,
+          { color: "#30FF30" }
+        );
+        drawingUtils.drawConnectors(
+          landmarks,
+          FaceLandmarker.FACE_LANDMARKS_FACE_OVAL,
+          { color: "#E0E0E0" }
+        );
+        drawingUtils.drawConnectors(
+          landmarks,
+          FaceLandmarker.FACE_LANDMARKS_LIPS,
+          { color: "#E0E0E0" }
+        );
+        drawingUtils.drawConnectors(
+          landmarks,
+          FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS,
+          { color: "#FF3030" }
+        );
+        drawingUtils.drawConnectors(
+          landmarks,
+          FaceLandmarker.FACE_LANDMARKS_LEFT_IRIS,
+          { color: "#30FF30" }
+        );
+      }
+    }
+    
+    drawBlendShapes(videoBlendShapes, results?.faceBlendshapes);
 
-  // Call this function again to keep predicting when the browser is ready.
-  if (webcamRunning === true) {
-    window.requestAnimationFrame(predictWebcam);
+    // Call this function again to keep predicting when the browser is ready.
+    if (webcamRunning === true) {
+      window.requestAnimationFrame(predictWebcam);
+    }
+  } catch (error) {
+    console.error("❌ Error in predictWebcam:", error);
   }
 }
 

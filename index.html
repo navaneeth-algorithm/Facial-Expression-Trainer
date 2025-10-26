@@ -1,58 +1,375 @@
-<!-- Copyright 2023 The MediaPipe Authors.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-     http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License. -->
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta http-equiv="Cache-control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-  <title>Face Landmarker</title>
+  <title>🎭 AI Face Expression Detection</title>
 
   <link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
   <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Custom Styles -->
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 3rem;
+      color: white;
+    }
+    
+    .header h1 {
+      font-size: 3.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+      background-size: 400% 400%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientShift 3s ease-in-out infinite;
+    }
+    
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    
+    .header p {
+      font-size: 1.2rem;
+      opacity: 0.9;
+      font-weight: 300;
+    }
+    
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    .card h2 {
+      color: #2c3e50;
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .card p {
+      color: #666;
+      margin-bottom: 1.5rem;
+      font-size: 1rem;
+    }
+    
+    .video-container {
+      position: relative;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      margin-bottom: 1rem;
+      width: 100%;
+      height: 360px;
+      background: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .video-container video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .video-container canvas {
+      pointer-events: none;
+    }
+    
+    .webcam-button {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 50px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+      margin-bottom: 1.5rem;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    .webcam-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+    }
+    
+    .webcam-button:active {
+      transform: translateY(-1px);
+    }
+    
+    .blend-shapes {
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+    
+    .blend-shapes-list {
+      list-style: none;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .blend-shapes-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .blend-shapes-label {
+      font-weight: 500;
+      color: #2c3e50;
+      text-transform: capitalize;
+    }
+    
+    .blend-shapes-value {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: white;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    
+    .detectOnClick {
+      cursor: pointer;
+      border-radius: 10px;
+      overflow: hidden;
+      transition: transform 0.3s ease;
+    }
+    
+    .detectOnClick:hover {
+      transform: scale(1.02);
+    }
+    
+    .detectOnClick img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+    }
+    
+    .status-loading {
+      background: #f39c12;
+      animation: pulse 1.5s infinite;
+    }
+    
+    .status-ready {
+      background: #27ae60;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .emoji {
+      font-size: 1.2em;
+    }
+    
+    /* Two Column Layout */
+    .two-column-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+    
+    .column {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .results-section {
+      margin-top: 2rem;
+    }
+    
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 1.5rem;
+    }
+    
+    .result-card {
+      background: rgba(255,255,255,0.1);
+      border-radius: 15px;
+      padding: 1.5rem;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    .result-card h3 {
+      color: #2c3e50;
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    /* Override Material Design button styles */
+    .mdc-button {
+      background: linear-gradient(45deg, #667eea, #764ba2) !important;
+      border-radius: 50px !important;
+      padding: 1rem 2rem !important;
+      font-weight: 600 !important;
+      text-transform: none !important;
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3) !important;
+    }
+    
+    .mdc-button:hover {
+      transform: translateY(-3px) !important;
+      box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4) !important;
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+      
+      .header h1 {
+        font-size: 2.5rem;
+      }
+      
+      .card {
+        padding: 1.5rem;
+      }
+      
+      .two-column-layout {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      
+      .results-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h1>Face landmark detection using the MediaPipe FaceLandmarker task</h1>
-
-  <section id="demos" class="invisible">
-    <h2>Demo: Detecting Images</h2>
-    <p><b>Click on an image below</b> to see the key landmarks of the face.</p>
-
-    <div class="detectOnClick">
-      <img src="https://storage.googleapis.com/mediapipe-assets/portrait.jpg" width="100%" crossorigin="anonymous" title="Click to get detection!" />
-    </div>
-    <div class="blend-shapes">
-      <ul class="blend-shapes-list" id="image-blend-shapes"></ul>
+  <div class="container">
+    <div class="header">
+      <h1>🎭 AI Face Expression Detection</h1>
+      <p>Powered by MediaPipe • Real-time facial analysis with advanced emotion recognition</p>
     </div>
 
-    <h2>Demo: Webcam continuous face landmarks detection</h2>
-    <p>Hold your face in front of your webcam to get real-time face landmarker detection.</br>Click <b>enable webcam</b> below and grant access to the webcam if prompted.</p>
+    <section id="demos" class="invisible">
+      <!-- Two Column Layout -->
+      <div class="two-column-layout">
+        <!-- Left Column - Static Image Analysis -->
+        <div class="column">
+          <div class="card">
+            <h2><span class="emoji">📸</span> Static Image Analysis</h2>
+            <p>Click on the image below to analyze facial landmarks and expressions.</p>
 
-    <div id="liveView" class="videoView">
-      <button id="webcamButton" class="mdc-button mdc-button--raised">
-        <span class="mdc-button__ripple"></span>
-        <span class="mdc-button__label">ENABLE WEBCAM</span>
-      </button>
-      <div style="position: relative;">
-        <video id="webcam" style="position: abso" autoplay playsinline></video>
-        <canvas class="output_canvas" id="output_canvas" style="position: absolute; left: 0px; top: 0px;"></canvas>
+            <div class="detectOnClick">
+              <img src="https://storage.googleapis.com/mediapipe-assets/portrait.jpg" width="100%" crossorigin="anonymous" title="Click to get detection!" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column - Live Video Detection -->
+        <div class="column">
+          <div class="card">
+            <h2><span class="emoji">📹</span> Live Webcam Detection</h2>
+            <p>Hold your face in front of your webcam for real-time analysis.</p>
+
+            <div id="liveView" class="videoView">
+              <button id="webcamButton" class="mdc-button mdc-button--raised">
+                <span class="mdc-button__ripple"></span>
+                <span class="mdc-button__label">🚀 ENABLE WEBCAM</span>
+              </button>
+              
+              <div class="video-container">
+                <video id="webcam" autoplay playsinline muted></video>
+                <canvas class="output_canvas" id="output_canvas"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="blend-shapes">
-      <ul class="blend-shapes-list" id="video-blend-shapes"></ul>
-    </div>
-  </section>
+
+      <!-- Results Section Below -->
+      <div class="results-section">
+        <div class="card">
+          <h2><span class="emoji">📊</span> Analysis Results</h2>
+          <p>Real-time facial analysis data and emotion detection results.</p>
+          
+          <div class="results-grid">
+            <!-- Static Image Results -->
+            <div class="result-card">
+              <h3><span class="emoji">📸</span> Static Image Blend Shapes</h3>
+              <div class="blend-shapes">
+                <ul class="blend-shapes-list" id="image-blend-shapes"></ul>
+              </div>
+            </div>
+
+            <!-- Live Video Results -->
+            <div class="result-card">
+              <h3><span class="emoji">📹</span> Live Video Blend Shapes</h3>
+              <div class="blend-shapes">
+                <ul class="blend-shapes-list" id="video-blend-shapes"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
   
   <!-- Load the JavaScript script -->
   <script type="module" src="script.js"></script>
