@@ -137,28 +137,111 @@ function handleTrainButtonClick() {
   }
 }
 
+// Comprehensive emoji mapping for emotions
+const emotionEmojiMap = {
+  // Happy emotions
+  'happy': '😀', 'grinning': '😀', 'grin': '😀',
+  'laughing': '🤣', 'laugh': '🤣', 'lol': '🤣',
+  'joy': '😂', 'tears': '😂', 'crying': '😂',
+  'sweat': '😅', 'nervous': '😅', 'awkward': '😅',
+  'relief': '🥲', 'content': '🥲', 'relieved': '🥲',
+  'holding': '🥹', 'emotional': '🥹', 'touched': '🥹',
+  'wink': '😉', 'winking': '😉',
+  'smile': '😊', 'smiling': '😊', 'blush': '😊',
+  'love': '🥰', 'affection': '🥰', 'adore': '🥰',
+  'heart': '😍', 'hearts': '😍', 'crush': '😍',
+  'kiss': '😘', 'kissing': '😘', 'blow': '😘',
+  'pucker': '😗', 'puckered': '😗',
+  'smile kiss': '😙', 'smiling kiss': '😙',
+  'closed kiss': '😚', 'closed eyes kiss': '😚',
+  
+  // Neutral emotions
+  'neutral': '😐', 'meh': '😐', 'ok': '😐',
+  'expressionless': '😑', 'blank': '😑', 'deadpan': '😑',
+  'unamused': '😒', 'annoyed': '😒', 'bored': '😒',
+  'roll': '🙄', 'eyeroll': '🙄', 'rolling': '🙄',
+  'sigh': '😮‍💨', 'exhausted': '😮‍💨', 'tired': '😮‍💨',
+  'grimace': '😬', 'cringe': '😬', 'awkward': '😬',
+  'lying': '🤥', 'pinocchio': '🤥', 'fib': '🤥',
+  'calm': '😌', 'peaceful': '😌', 'serene': '😌',
+  'pensive': '😔', 'sad': '😔', 'melancholy': '😔',
+  'sleepy': '😪', 'drowsy': '😪', 'tired': '😪',
+  'drooling': '🤤', 'hungry': '🤤', 'craving': '🤤',
+  'sleeping': '😴', 'asleep': '😴', 'zzz': '😴',
+  
+  // Additional emotions
+  'angry': '😠', 'mad': '😠', 'furious': '😠',
+  'surprised': '😮', 'shocked': '😮', 'wow': '😮',
+  'confused': '😕', 'huh': '😕', 'what': '😕',
+  'worried': '😟', 'concerned': '😟', 'anxious': '😟',
+  'fear': '😨', 'scared': '😨', 'afraid': '😨',
+  'cry': '😢', 'crying': '😢', 'tears': '😢',
+  'disappointed': '😞', 'let down': '😞', 'sad': '😞'
+};
+
+// Function to detect if a character is an emoji
+function isEmoji(char) {
+  const emojiRegex = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
+  return emojiRegex.test(char);
+}
+
+// Function to find emoji for text input
+function findEmojiForText(text) {
+  const lowerText = text.toLowerCase().trim();
+  
+  // Direct match
+  if (emotionEmojiMap[lowerText]) {
+    return emotionEmojiMap[lowerText];
+  }
+  
+  // Partial match
+  for (const [key, emoji] of Object.entries(emotionEmojiMap)) {
+    if (lowerText.includes(key) || key.includes(lowerText)) {
+      return emoji;
+    }
+  }
+  
+  return null; // No match found
+}
+
 // Function to handle dynamic emoji setting
 function setDynamicEmoji() {
   const userInput = dynamicEmojiInput.value.trim();
 
   if (userInput) {
-    // Determine if the input contains at least one emoji
-    // For this example, we'll just take the first "character" (which could be a multi-codepoint emoji)
-    const firstCharacter = Array.from(userInput)[0] || '';
+    let emoji = '';
+    let emotionText = '';
     
-    // The rest of the input as the label (if more than one character was entered)
-    const emotionText = Array.from(userInput).length > 1 
-      ? userInput.substring(firstCharacter.length).trim() || "Dynamic Emotion"
-      : "Dynamic Input";
+    // Check if the first character is an emoji
+    const firstChar = Array.from(userInput)[0];
+    
+    if (isEmoji(firstChar)) {
+      // First character is an emoji
+      emoji = firstChar;
+      // The rest is the text
+      emotionText = userInput.substring(firstChar.length).trim() || "Custom Emotion";
+    } else {
+      // No emoji found, try to find emoji for the text
+      const foundEmoji = findEmojiForText(userInput);
+      
+      if (foundEmoji) {
+        emoji = foundEmoji;
+        emotionText = userInput;
+      } else {
+        // No emoji mapping found, use default
+        emoji = "😐";
+        emotionText = userInput;
+      }
+    }
 
     // Update the main display elements
-    bigEmojiOutput.innerHTML = `<span class="emoji">${firstCharacter}</span>`;
+    bigEmojiOutput.innerHTML = `<span class="emoji">${emoji}</span>`;
     emotionLabel.textContent = emotionText;
     
-    // Optional: Clear the input field
+    // Clear the input field
     dynamicEmojiInput.value = '';
     
-    console.log(`🎨 Dynamic Emoji Set: ${firstCharacter} - ${emotionText}`);
+    console.log(`🎨 Dynamic Emoji Set: ${emoji} - ${emotionText}`);
   } else {
     alert("Please type an emoji or text.");
   }
