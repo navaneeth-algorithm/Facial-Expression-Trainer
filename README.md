@@ -245,7 +245,16 @@ We welcome contributions! Please see our contributing guidelines:
 
 ## 📄 License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+### **What the MIT License Means:**
+- ✅ **Free to use** - Anyone can use this software for any purpose
+- ✅ **Free to modify** - You can change the code as needed
+- ✅ **Free to distribute** - Share the software with others
+- ✅ **Commercial use** - Use in commercial projects
+- ✅ **Attribution required** - Must include the original license and copyright notice
+
+**Perfect for open-source projects that want maximum compatibility and adoption!**
 
 ## 🙏 Acknowledgments
 
