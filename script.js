@@ -33,6 +33,11 @@ const trainingStatusEl = document.getElementById("training-status");
 const trainButton = document.getElementById("train-button");
 const emotionButtons = document.querySelectorAll("#custom-emotions-container button");
 
+// NEW: UI Elements for Dynamic Emoji Input
+const dynamicEmojiInput = document.getElementById("dynamic-emoji-input");
+const setDynamicEmojiButton = document.getElementById("set-dynamic-emoji");
+const exampleEmojis = document.querySelectorAll(".example-emoji");
+
 let faceLandmarker;
 let runningMode = "IMAGE";
 let enableWebcamButton;
@@ -132,6 +137,40 @@ function handleTrainButtonClick() {
   }
 }
 
+// Function to handle dynamic emoji setting
+function setDynamicEmoji() {
+  const userInput = dynamicEmojiInput.value.trim();
+
+  if (userInput) {
+    // Determine if the input contains at least one emoji
+    // For this example, we'll just take the first "character" (which could be a multi-codepoint emoji)
+    const firstCharacter = Array.from(userInput)[0] || '';
+    
+    // The rest of the input as the label (if more than one character was entered)
+    const emotionText = Array.from(userInput).length > 1 
+      ? userInput.substring(firstCharacter.length).trim() || "Dynamic Emotion"
+      : "Dynamic Input";
+
+    // Update the main display elements
+    bigEmojiOutput.innerHTML = `<span class="emoji">${firstCharacter}</span>`;
+    emotionLabel.textContent = emotionText;
+    
+    // Optional: Clear the input field
+    dynamicEmojiInput.value = '';
+    
+    console.log(`🎨 Dynamic Emoji Set: ${firstCharacter} - ${emotionText}`);
+  } else {
+    alert("Please type an emoji or text.");
+  }
+}
+
+// Function to handle example emoji clicks
+function handleExampleEmojiClick(event) {
+  const emojiData = event.currentTarget.dataset.emoji;
+  dynamicEmojiInput.value = emojiData;
+  setDynamicEmoji();
+}
+
 // Attach listeners once the document is ready
 window.addEventListener('DOMContentLoaded', () => {
   emotionButtons.forEach(button => {
@@ -141,6 +180,21 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   trainButton.addEventListener('click', handleTrainButtonClick);
+  
+  // Dynamic emoji input listeners
+  setDynamicEmojiButton.addEventListener('click', setDynamicEmoji);
+  
+  // Example emoji click listeners
+  exampleEmojis.forEach(emoji => {
+    emoji.addEventListener('click', handleExampleEmojiClick);
+  });
+  
+  // Allow Enter key to trigger emoji setting
+  dynamicEmojiInput.addEventListener('keypress', (event) => {
+    if (event.key === 'Enter') {
+      setDynamicEmoji();
+    }
+  });
 });
 
 /********************************************************************

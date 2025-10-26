@@ -314,6 +314,81 @@
       text-align: center;
     }
     
+    /* Dynamic Input Styling */
+    .dynamic-input-card {
+      margin-bottom: 2rem;
+    }
+    
+    .input-group {
+      display: flex;
+      gap: 1rem;
+      margin: 1.5rem 0;
+      align-items: center;
+    }
+    
+    #dynamic-emoji-input {
+      flex: 1;
+      padding: 1rem;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 15px;
+      background: rgba(255,255,255,0.1);
+      color: #333;
+      font-size: 1.1rem;
+      font-family: 'Inter', sans-serif;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+    
+    #dynamic-emoji-input:focus {
+      outline: none;
+      border-color: #667eea;
+      background: rgba(255,255,255,0.2);
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+    }
+    
+    #dynamic-emoji-input::placeholder {
+      color: rgba(51, 51, 51, 0.6);
+    }
+    
+    #set-dynamic-emoji {
+      background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+      color: white;
+      border-radius: 25px;
+      min-width: 120px;
+      white-space: nowrap;
+    }
+    
+    .emoji-examples {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: rgba(255,255,255,0.05);
+      border-radius: 15px;
+    }
+    
+    .example-emojis {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .example-emoji {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: rgba(255,255,255,0.1);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 1.2rem;
+      border: 2px solid transparent;
+    }
+    
+    .example-emoji:hover {
+      background: rgba(255,255,255,0.2);
+      border-color: #667eea;
+      transform: scale(1.05);
+    }
+    
     /* Override Material Design button styles */
     .mdc-button {
       background: linear-gradient(45deg, #667eea, #764ba2) !important;
@@ -432,6 +507,31 @@
             <span class="emoji">😐</span>
           </div>
           <p id="emotion-label" style="text-align: center; font-size: 1.5rem; font-weight: bold; color: #764ba2;">Neutral</p>
+        </div>
+        
+        <!-- Dynamic Emoji Input Card -->
+        <div class="card dynamic-input-card">
+          <h2><span class="emoji">✏️</span> Dynamic Emoji Input</h2>
+          <p>Type any emoji or text to display it in the main emotion area.</p>
+          
+          <div class="input-group">
+            <input type="text" id="dynamic-emoji-input" placeholder="Type an emoji or text... (e.g., 🎉 Happy!)" maxlength="50">
+            <button id="set-dynamic-emoji" class="mdc-button mdc-button--raised">
+              <span class="mdc-button__ripple"></span>
+              <span class="mdc-button__label">SET EMOJI</span>
+            </button>
+          </div>
+          
+          <div class="emoji-examples">
+            <p><strong>Try these examples:</strong></p>
+            <div class="example-emojis">
+              <span class="example-emoji" data-emoji="🎉 Celebration!">🎉</span>
+              <span class="example-emoji" data-emoji="🤯 Mind Blown">🤯</span>
+              <span class="example-emoji" data-emoji="😍 Love It">😍</span>
+              <span class="example-emoji" data-emoji="🔥 Fire!">🔥</span>
+              <span class="example-emoji" data-emoji="💯 Perfect">💯</span>
+            </div>
+          </div>
         </div>
         
         <div class="card">
